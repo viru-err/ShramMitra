@@ -35,11 +35,17 @@ export default function Navbar() {
           ? "bg-gradient-to-r from-yellow-500 via-amber-600 to-orange-600"
           : "bg-amber-700"
       } text-white px-6 py-4 flex justify-between items-center h-20 shadow-md fixed top-0 w-full z-50`}
+      role="navigation"
+      aria-label="Main Navigation"
     >
-      <div className="text-3xl font-bold tracking-wide drop-shadow-sm">
+      <Link
+        to="/"
+        className="text-3xl font-bold tracking-wide drop-shadow-sm hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+        aria-label="ShramMitra Home"
+      >
         ShramMitra
-      </div>
-      <div className="space-x-6 flex items-center">
+      </Link>
+      <div className="space-x-2 sm:space-x-4 flex items-center">
         {navLinks.map(({ to, label, special }) => {
           const isActive = location.pathname === to;
           return (
@@ -47,6 +53,8 @@ export default function Navbar() {
               key={to}
               to={to}
               className={getLinkClasses(isActive, special)}
+              tabIndex={0}
+              aria-current={isActive ? "page" : undefined}
             >
               {label}
             </Link>

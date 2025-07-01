@@ -9,6 +9,7 @@ export default function RegisterLabor() {
     skill: "",
     location: "",
     experience: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -20,6 +21,7 @@ export default function RegisterLabor() {
     if (!formData.skill.trim()) newErrors.skill = "Skill is required";
     if (!formData.location.trim()) newErrors.location = "Location is required";
     if (!formData.experience.trim()) newErrors.experience = "Experience is required";
+    if (!formData.password || formData.password.length < 6) newErrors.password = "Password (min 6 chars) is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -29,24 +31,21 @@ export default function RegisterLabor() {
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-// ...
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validate()) return;
-
-  try {
-    const res = await axios.post("http://localhost:5000/api/labor/register", formData);
-    alert("Labor registered successfully!");
-    setFormData({ name: "", phone: "", skill: "", location: "", experience: "" });
-  } catch (error) {
-    console.error("Registration error:", error);
-    alert("Registration failed. Please try again.");
-  }
-};
-
+    try {
+      const res = await axios.post("http://localhost:5000/api/labor/register", formData);
+      alert("Laborer registered successfully!");
+      setFormData({ name: "", phone: "", skill: "", location: "", experience: "", password: "" });
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert(
+        error.response?.data?.message || "Registration failed. Please try again."
+      );
+    }
+  };
 
   return (
     <div className="max-w-xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg">
@@ -57,12 +56,13 @@ const handleSubmit = async (e) => {
           { label: "Phone", name: "phone" },
           { label: "Skill", name: "skill" },
           { label: "Location", name: "location" },
-          { label: "Experience", name: "experience" }
-        ].map(({ label, name }) => (
+          { label: "Experience", name: "experience" },
+          { label: "Password", name: "password", type: "password" }
+        ].map(({ label, name, type = "text" }) => (
           <div key={name}>
             <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
             <input
-              type="text"
+              type={type}
               name={name}
               value={formData[name]}
               onChange={handleChange}
