@@ -14,49 +14,49 @@ export const login = async (req, res) => {
 
     // Helper function to check user and return token if valid
     const tryLogin = async (Model, role) => {
-      // Always select password explicitly due to select: false in schema
       const user = await Model.findOne({ phone }).select("+password");
       if (!user) return null;
 
-      // Use model's matchPassword method if available, else bcrypt.compare
       const isMatch = typeof user.matchPassword === "function"
         ? await user.matchPassword(password)
         : await bcrypt.compare(password, user.password);
 
-      if (isMatch) {
-        if (user.isActive === false) {
-          return { error: `${role.charAt(0).toUpperCase() + role.slice(1)} account is deactivated` };
-        }
-        const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-        return { token, role };
+      if (!isMatch) return null;
+
+      if (user.isActive === false) {
+        return { error: `${role.charAt(0).toUpperCase() + role.slice(1)} account is deactivated` };
       }
-      return null;
+
+      // ✅ Payload includes user ID, phone, and role
+      const payload = { id: user._id, role, phone: user.phone };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+      return {
+        token,
+        role,
+        user: {
+          id: user._id,
+          name: user.name,
+          phone: user.phone,
+          role,
+        },
+      };
     };
 
     // Try Labor login
-    // Try Labor login
-let result = await tryLogin(Labor, "labor");
-if (result?.error) return res.status(403).json({ message: result.error });
-if (result) {
-  console.log("Login successful for role:", result.role);
-  return res.json(result);
-}
+    let result = await tryLogin(Labor, "labor");
+    if (result?.error) return res.status(403).json({ message: result.error });
+    if (result) return res.json(result);
 
-// Try Client login
-result = await tryLogin(Client, "client");
-if (result?.error) return res.status(403).json({ message: result.error });
-if (result) {
-  console.log("Login successful for role:", result.role);
-  return res.json(result);
-}
+    // Try Client login
+    result = await tryLogin(Client, "client");
+    if (result?.error) return res.status(403).json({ message: result.error });
+    if (result) return res.json(result);
 
-// Try Admin login
-result = await tryLogin(Admin, "admin");
-if (result?.error) return res.status(403).json({ message: result.error });
-if (result) {
-  console.log("Login successful for role:", result.role);
-  return res.json(result);
-}
+    // Try Admin login
+    result = await tryLogin(Admin, "admin");
+    if (result?.error) return res.status(403).json({ message: result.error });
+    if (result) return res.json(result);
 
     return res.status(401).json({ message: "Invalid credentials" });
 

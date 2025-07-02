@@ -4,9 +4,14 @@ const notificationSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Labor",
       required: true,
-      index: true, // For faster queries by user
+      index: true,
+      refPath: "userModel", // Dynamically reference either 'Labor' or 'Client'
+    },
+    userModel: {
+      type: String,
+      required: true,
+      enum: ["Labor", "Client"], // Supported models
     },
     message: {
       type: String,
@@ -20,7 +25,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["info", "success", "warning", "error"],
+      enum: ["info", "success", "warning", "error", "application"],
       default: "info",
     },
     meta: {
@@ -29,10 +34,8 @@ const notificationSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: true, // Automatically adds createdAt and updatedAt
   }
 );
 
-const Notification = mongoose.model("Notification", notificationSchema);
-
-export default Notification;
+export default mongoose.model("Notification", notificationSchema);

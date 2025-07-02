@@ -1,21 +1,7 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs"; // Add bcrypt for password hashing
+import bcrypt from "bcryptjs";
 
-const notificationSchema = new mongoose.Schema(
-  {
-    message: { type: String, trim: true, required: true },
-    createdAt: { type: Date, default: Date.now },
-    read: { type: Boolean, default: false },
-    type: {
-      type: String,
-      enum: ["info", "success", "warning", "error"],
-      default: "info",
-    },
-    meta: { type: Object, default: {} },
-  },
-  { _id: false }
-);
-
+// Labor schema definition
 const laborSchema = new mongoose.Schema(
   {
     name: {
@@ -47,9 +33,8 @@ const laborSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      select: false, // Prevent password from being returned by default
+      select: false, // Hide password in query results
     },
-    notifications: [notificationSchema],
     isActive: {
       type: Boolean,
       default: true,
@@ -64,14 +49,14 @@ const laborSchema = new mongoose.Schema(
   }
 );
 
-// Password hashing before saving
+// 🔐 Hash password before saving
 laborSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// Optional: method to compare password
+// 🔐 Password comparison method
 laborSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

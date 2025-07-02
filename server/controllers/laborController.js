@@ -1,25 +1,22 @@
-import Labor from "../models/Labor.js";
 import Notification from "../models/Notification.js";
 import Job from "../models/Job.js";
-import { sendNotification } from "../utils.js/sendNotification.js"; // <-- Import your notification util
+import Labor from "../models/Labor.js";
+import Client from "../models/Client.js";
 
 // ✅ Register a new Laborer
 export const registerLabor = async (req, res) => {
   const { name, phone, skill, location, experience, password } = req.body;
 
   try {
-    // Validate required fields
     if (!name || !phone || !skill || !location || !experience || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check for existing laborer
     const existingLabor = await Labor.findOne({ phone });
     if (existingLabor) {
       return res.status(400).json({ message: "Phone already registered" });
     }
 
-    // Create new laborer
     const newLabor = new Labor({
       name,
       phone,
@@ -31,18 +28,20 @@ export const registerLabor = async (req, res) => {
 
     await newLabor.save();
 
-    // Remove password from response
     const laborResponse = newLabor.toObject();
     delete laborResponse.password;
 
-    res.status(201).json({ message: "Laborer registered successfully", labor: laborResponse });
+    res.status(201).json({
+      message: "Laborer registered successfully",
+      labor: laborResponse,
+    });
   } catch (error) {
     console.error("Labor Registration Error:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// ✅ Apply for a job (protected route)
+// ✅ Labor applies for a job
 export const applyForJob = async (req, res) => {
   try {
     const laborId = req.user.id;
@@ -57,7 +56,6 @@ export const applyForJob = async (req, res) => {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    // Prevent duplicate applications
     if (job.applicants && job.applicants.includes(laborId)) {
       return res.status(400).json({ message: "Already applied for this job" });
     }
@@ -66,24 +64,27 @@ export const applyForJob = async (req, res) => {
     job.applicants.push(laborId);
     await job.save();
 
-    // --- Send notification to client with labor details ---
     const labor = await Labor.findById(laborId).select("name phone skill location experience");
-    const clientId = job.postedBy; // assuming job.postedBy is the client's user ID
+    const client = await Client.findOne({ phone: job.postedBy });
 
-    const message = `New application from ${labor.name} (${labor.phone}) for your job: ${job.title}`;
-    const meta = {
-      laborId: labor._id,
-      laborName: labor.name,
-      laborPhone: labor.phone,
-      laborSkill: labor.skill,
-      laborLocation: labor.location,
-      laborExperience: labor.experience,
-      jobId: job._id,
-      jobTitle: job.title,
-    };
-
-    await sendNotification(clientId, message, "info", meta);
-    // ------------------------------------------------------
+    if (client) {
+      await Notification.create({
+        user: client._id,
+        userModel: "Client",
+        message: `Labor ${labor.name} (${labor.phone}) applied for your job: ${job.title}`,
+        type: "application",
+        meta: {
+          laborId: labor._id,
+          laborName: labor.name,
+          laborPhone: labor.phone,
+          laborSkill: labor.skill,
+          laborLocation: labor.location,
+          laborExperience: labor.experience,
+          jobId: job._id,
+          jobTitle: job.title,
+        },
+      });
+    }
 
     res.json({ message: "Applied successfully!" });
   } catch (error) {
@@ -92,14 +93,17 @@ export const applyForJob = async (req, res) => {
   }
 };
 
-// ✅ Get all notifications for the logged-in labor
+// ✅ Get notifications for logged-in labor
 export const getLaborNotifications = async (req, res) => {
   try {
     if (!req.user || req.user.role !== "labor") {
       return res.status(403).json({ message: "Access denied: Labor only" });
     }
 
-    const notifications = await Notification.find({ user: req.user.id })
+    const notifications = await Notification.find({
+      user: req.user.id,
+      userModel: "Labor",
+    })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -107,5 +111,39 @@ export const getLaborNotifications = async (req, res) => {
   } catch (error) {
     console.error("Notification Fetch Error:", error);
     res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+};
+
+// ✅ Get logged-in labor profile
+export const getLaborProfile = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== "labor") {
+      return res.status(403).json({ message: "Access denied: Labor only" });
+    }
+
+    const labor = await Labor.findById(req.user.id).select("-password");
+    if (!labor) {
+      return res.status(404).json({ message: "Labor not found" });
+    }
+
+    res.status(200).json({ labor });
+  } catch (error) {
+    console.error("Get Labor Profile Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ✅ View all laborers (admin or client)
+export const viewLaborers = async (req, res) => {
+  try {
+    if (!req.user || !["admin", "client"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied: Admin or Client only" });
+    }
+
+    const laborers = await Labor.find().select("-password");
+    res.json({ laborers });
+  } catch (error) {
+    console.error("View Laborers Error:", error);
+    res.status(500).json({ message: "Failed to fetch laborers" });
   }
 };

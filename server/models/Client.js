@@ -11,9 +11,9 @@ const clientSchema = new mongoose.Schema(
     },
     company: {
       type: String,
+      required: true,
       trim: true,
       maxlength: 100,
-      required: true,
     },
     phone: {
       type: String,
@@ -30,7 +30,7 @@ const clientSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      select: false, // Do not return password by default
+      select: false, // Don't return password in queries by default
     },
     isActive: {
       type: Boolean,
@@ -46,14 +46,14 @@ const clientSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+// 🔐 Hash password before saving
 clientSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// Method to compare password
+// 🔐 Password comparison method
 clientSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

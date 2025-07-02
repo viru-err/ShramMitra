@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function PostJob() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -16,22 +17,25 @@ export default function PostJob() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  // ---------- validation ----------
   const validate = () => {
-    const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = "Job title is required";
-    if (!formData.skill.trim()) newErrors.skill = "Skill is required";
-    if (!formData.location.trim()) newErrors.location = "Location is required";
-    if (
-      !formData.numberOfLaborers ||
-      isNaN(formData.numberOfLaborers) ||
-      Number(formData.numberOfLaborers) <= 0
-    )
-      newErrors.numberOfLaborers = "Enter a valid positive number";
-    if (!formData.date) newErrors.date = "Start date is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e = {};
+
+    if (!formData.title.trim()) e.title = "Job title is required";
+    if (!formData.skill.trim()) e.skill = "Skill is required";
+    if (!formData.location.trim()) e.location = "Location is required";
+
+    const count = Number(formData.numberOfLaborers);
+    if (!count || isNaN(count) || count <= 0)
+      e.numberOfLaborers = "Enter a valid positive number";
+
+    if (!formData.date) e.date = "Start date is required";
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
+  // ---------- handlers ----------
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
@@ -40,26 +44,48 @@ export default function PostJob() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+
     setSubmitting(true);
 
     try {
-      // Optionally, add authentication headers here
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in as a client first.");
+        navigate("/login");
+        return;
+      }
+
       const payload = {
         ...formData,
         numberOfLaborers: Number(formData.numberOfLaborers),
-        deadline: formData.date,
+        date: formData.date, // backend expects `date` (not `deadline`)
       };
-      delete payload.date;
-      const res = await axios.post("http://localhost:5000/api/jobs/post", payload);
+      // Remove deadline if present, ensure only `date` is sent
+      delete payload.deadline;
+
+      await axios.post("http://localhost:5000/api/client/post-job", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       alert("Job posted successfully!");
       navigate("/my-jobs");
     } catch (err) {
-      console.error("Job post failed:", err);
-      alert("Failed to post job. Try again.");
+      console.error("Job post failed:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Failed to post job. Try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  // ---------- UI ----------
+  const fields = [
+    { name: "title", label: "Job Title" },
+    { name: "description", label: "Job Description" },
+    { name: "skill", label: "Required Skill" },
+    { name: "location", label: "Location" },
+    { name: "numberOfLaborers", label: "Number of Laborers", type: "number", min: 1 },
+    { name: "date", label: "Start Date", type: "date" },
+  ];
 
   return (
     <div className="max-w-2xl mx-auto p-8 bg-white mt-10 shadow rounded">
@@ -68,14 +94,7 @@ export default function PostJob() {
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {[
-          { name: "title", label: "Job Title" },
-          { name: "description", label: "Job Description" },
-          { name: "skill", label: "Required Skill" },
-          { name: "location", label: "Location" },
-          { name: "numberOfLaborers", label: "Number of Laborers", type: "number", min: 1 },
-          { name: "date", label: "Start Date", type: "date" },
-        ].map(({ name, label, type = "text", min }) => (
+        {fields.map(({ name, label, type = "text", min }) => (
           <div key={name}>
             <label className="block font-medium text-gray-700">{label}</label>
             <input
@@ -84,12 +103,14 @@ export default function PostJob() {
               value={formData[name]}
               min={min}
               onChange={handleChange}
-              className={`w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 ${
-                errors[name] ? "border-red-400" : ""
+              className={`w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 ${
+                errors[name] ? "border-red-400" : "border-gray-300"
               }`}
               autoComplete="off"
             />
-            {errors[name] && <p className="text-red-500 text-sm">{errors[name]}</p>}
+            {errors[name] && (
+              <p className="text-red-500 text-sm">{errors[name]}</p>
+            )}
           </div>
         ))}
 
@@ -98,7 +119,7 @@ export default function PostJob() {
           className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-semibold"
           disabled={submitting}
         >
-          {submitting ? "Posting..." : "Post Job"}
+          {submitting ? "Posting…" : "Post Job"}
         </button>
       </form>
     </div>

@@ -3,10 +3,11 @@ import { login } from "../controllers/authController.js";
 
 const router = express.Router();
 
-// Login route
+// ✅ POST /api/auth/login
+// Handles login for Labor, Client, and Admin
 router.post("/login", login);
 
-// 404 handler for undefined auth routes
+// ✅ Catch-all for undefined auth routes
 router.all("*", (req, res) => {
   res.status(404).json({ message: "Auth route not found" });
 });

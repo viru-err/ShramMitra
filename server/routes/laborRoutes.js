@@ -1,23 +1,41 @@
 import express from "express";
 import {
   registerLabor,
+  getLaborProfile,
+  applyForJob,
   getLaborNotifications,
-  applyForJob, // <-- Import the controller
+  viewLaborers,
 } from "../controllers/laborController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Register Laborer
+// ✅ Public: Register a new laborer
 router.post("/register", registerLabor);
 
-// Apply for a job (protected route)
-router.post("/apply", verifyToken, applyForJob);
+// ✅ Protected: Get logged-in labor profile
+router.get("/me", verifyToken, getLaborProfile);
 
-// Labor Dashboard (protected, labor only)
+// ✅ Protected: Apply for a job (Labor only)
+router.post("/apply", verifyToken, (req, res, next) => {
+  if (req.user.role !== "labor") {
+    return res.status(403).json({ message: "Access denied. Labor only." });
+  }
+  applyForJob(req, res, next);
+});
+
+// ✅ Protected: View all laborers (Admin or Client only)
+router.get("/view-laborers", verifyToken, (req, res, next) => {
+  if (!["admin", "client"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Access denied. Admin or Client only." });
+  }
+  viewLaborers(req, res, next);
+});
+
+// ✅ Protected: Labor dashboard (Labor only)
 router.get("/dashboard", verifyToken, (req, res) => {
-  if (!req.user || req.user.role !== "labor") {
-    return res.status(403).json({ message: "Access denied: Labor only" });
+  if (req.user.role !== "labor") {
+    return res.status(403).json({ message: "Access denied. Labor only." });
   }
 
   res.json({
@@ -27,10 +45,15 @@ router.get("/dashboard", verifyToken, (req, res) => {
   });
 });
 
-// Get Notifications for Logged-in Laborer
-router.get("/notifications", verifyToken, getLaborNotifications);
+// ✅ Protected: Get labor notifications
+router.get("/notifications", verifyToken, (req, res, next) => {
+  if (req.user.role !== "labor") {
+    return res.status(403).json({ message: "Access denied. Labor only." });
+  }
+  getLaborNotifications(req, res, next);
+});
 
-// 404 handler for undefined labor routes
+// ❌ Fallback for undefined labor routes
 router.all("*", (req, res) => {
   res.status(404).json({ message: "Labor route not found" });
 });

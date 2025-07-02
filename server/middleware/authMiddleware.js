@@ -11,18 +11,31 @@ export const verifyToken = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
 
     let user = null;
     switch (decoded.role) {
       case "labor":
-        user = await Labor.findById(decoded.id).select("_id role isActive");
+        user = decoded.id
+          ? await Labor.findById(decoded.id).select("_id role isActive")
+          : null;
         break;
       case "client":
-        user = await Client.findById(decoded.id).select("_id role isActive");
+        if (decoded.phone) {
+          user = await Client.findOne({ phone: decoded.phone }).select("_id role isActive phone");
+        } else if (decoded.id) {
+          user = await Client.findById(decoded.id).select("_id role isActive phone");
+        }
         break;
       case "admin":
-        user = await Admin.findById(decoded.id).select("_id role isActive");
+        user = decoded.id
+          ? await Admin.findById(decoded.id).select("_id role isActive")
+          : null;
         break;
       default:
         return res.status(401).json({ message: "Invalid user role" });
@@ -31,10 +44,11 @@ export const verifyToken = async (req, res, next) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     if (user.isActive === false) return res.status(403).json({ message: "User is deactivated" });
 
-    req.user = { id: user._id, role: decoded.role };
+    // Use phone as main identifier for client
+    req.user = { phone: user.phone, role: decoded.role, id: user._id };
     next();
   } catch (error) {
-    console.error("Token error:", error);
-    res.status(401).json({ message: "Invalid or expired token" });
+    console.error("Token verification error:", error);
+    res.status(500).json({ message: "Server error during authentication" });
   }
 };

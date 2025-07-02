@@ -2,20 +2,57 @@ import mongoose from "mongoose";
 
 const jobSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true, maxlength: 100 },
-    skill: { type: String, required: true, trim: true, maxlength: 50 },
-    location: { type: String, required: true, trim: true, maxlength: 100 },
-    description: { type: String, trim: true, default: "", maxlength: 1000 },
-    postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Client", required: true, index: true },
-    salary: { type: Number, min: 0, default: 0 },
-    isActive: { type: Boolean, default: true },
-    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: "Labor" }],
-    deadline: { type: Date }, // Optional: add deadline for job
-    jobType: {
+    title: {
       type: String,
-      enum: ["full-time", "part-time", "contract", "temporary", "internship"],
-      default: "full-time",
+      required: true,
+      trim: true,
+      maxlength: 100,
     },
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 1000,
+    },
+    skill: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50,
+    },
+    location: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+    numberOfLaborers: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    deadline: {
+      type: Date,
+      required: true,
+    },
+    postedBy: {
+      type: String, // Client phone number (you may also use ObjectId if linking to Client model)
+      required: true,
+      index: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    applicants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Labor",
+      },
+    ],
+    // Optional fields
+    // jobType: { type: String, enum: ["Full-time", "Part-time", "Contract"], default: "Contract" },
+    // salary: { type: Number, min: 0 },
   },
   { timestamps: true }
 );
