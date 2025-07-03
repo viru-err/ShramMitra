@@ -17,25 +17,19 @@ export default function PostJob() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  // ---------- validation ----------
   const validate = () => {
     const e = {};
-
     if (!formData.title.trim()) e.title = "Job title is required";
     if (!formData.skill.trim()) e.skill = "Skill is required";
     if (!formData.location.trim()) e.location = "Location is required";
-
     const count = Number(formData.numberOfLaborers);
-    if (!count || isNaN(count) || count <= 0)
-      e.numberOfLaborers = "Enter a valid positive number";
-
+    if (!count || isNaN(count) || count <= 0) e.numberOfLaborers = "Enter a valid positive number";
     if (!formData.date) e.date = "Start date is required";
 
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // ---------- handlers ----------
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
@@ -44,7 +38,6 @@ export default function PostJob() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
     setSubmitting(true);
 
     try {
@@ -58,10 +51,8 @@ export default function PostJob() {
       const payload = {
         ...formData,
         numberOfLaborers: Number(formData.numberOfLaborers),
-        date: formData.date, // backend expects `date` (not `deadline`)
+        date: formData.date,
       };
-      // Remove deadline if present, ensure only `date` is sent
-      delete payload.deadline;
 
       await axios.post("http://localhost:5000/api/client/post-job", payload, {
         headers: { Authorization: `Bearer ${token}` },
@@ -77,7 +68,8 @@ export default function PostJob() {
     }
   };
 
-  // ---------- UI ----------
+  const handleBack = () => navigate("/client/dashboard");
+
   const fields = [
     { name: "title", label: "Job Title" },
     { name: "description", label: "Job Description" },
@@ -88,40 +80,50 @@ export default function PostJob() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto p-8 bg-white mt-10 shadow rounded">
-      <h2 className="text-2xl font-bold text-green-600 mb-6 text-center">
-        Post a New Job
-      </h2>
+    <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-green-100 px-6 py-16 flex flex-col items-center">
+      <div className="w-full max-w-2xl bg-white border-l-4 border-green-500 rounded-xl shadow-lg p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-green-700 drop-shadow-sm">
+            📝 Post a New Job
+          </h2>
+          <button
+            onClick={handleBack}
+            className="text-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow font-medium transition"
+          >
+            ← Back
+          </button>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {fields.map(({ name, label, type = "text", min }) => (
-          <div key={name}>
-            <label className="block font-medium text-gray-700">{label}</label>
-            <input
-              type={type}
-              name={name}
-              value={formData[name]}
-              min={min}
-              onChange={handleChange}
-              className={`w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 ${
-                errors[name] ? "border-red-400" : "border-gray-300"
-              }`}
-              autoComplete="off"
-            />
-            {errors[name] && (
-              <p className="text-red-500 text-sm">{errors[name]}</p>
-            )}
-          </div>
-        ))}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {fields.map(({ name, label, type = "text", min }) => (
+            <div key={name}>
+              <label className="block mb-1 font-medium text-gray-700">{label}</label>
+              <input
+                type={type}
+                name={name}
+                value={formData[name]}
+                min={min}
+                onChange={handleChange}
+                className={`w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 ${
+                  errors[name] ? "border-red-400" : "border-gray-300"
+                }`}
+                autoComplete="off"
+              />
+              {errors[name] && (
+                <p className="text-red-500 text-sm mt-1">{errors[name]}</p>
+              )}
+            </div>
+          ))}
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-semibold"
-          disabled={submitting}
-        >
-          {submitting ? "Posting…" : "Post Job"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded transition font-semibold"
+            disabled={submitting}
+          >
+            {submitting ? "Posting…" : "Post Job"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

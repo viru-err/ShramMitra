@@ -12,7 +12,7 @@ import LaborDashboard from "./pages/Labor/LaborDashboard";
 import JobSearch from "./pages/Labor/JobSearch";
 import JobApplications from "./pages/Labor/JobApplications";
 import ProfileManagement from "./pages/Labor/ProfileManagement";
-import Notification from "./pages/Labor/Notification";
+// import Notification from "./pages/Labor/Notification";
 
 // Client Pages
 import RegisterClient from "./pages/Client/RegisterClient";

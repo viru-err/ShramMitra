@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function JobApplications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -16,9 +18,7 @@ export default function JobApplications() {
         }
 
         const response = await axios.get("http://localhost:5000/api/labor/applications", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         setApplications(response.data.applications || []);
@@ -32,44 +32,44 @@ export default function JobApplications() {
     fetchApplications();
   }, []);
 
-  return (
-    <section
-      className="relative w-full overflow-hidden"
-      style={{ height: "calc(100vh - 5rem - 4rem)" }}
-    >
-      {/* Optional background image layer */}
-      <img
-        src="/home-image.jpg"
-        alt="Job applications background"
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      />
-      <div className="absolute inset-0  bg-opacity-50 z-10" />
+  const handleBack = () => {
+    navigate("/labor/dashboard");
+  };
 
-      <div className="relative z-20 max-w-5xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-bold text-orange-500 mb-6 text-center drop-shadow-lg">
-          Your Job Applications
-        </h1>
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-orange-100 px-6 py-16 flex flex-col items-center">
+      <div className="w-full max-w-5xl">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-orange-700 drop-shadow-sm text-center sm:text-left">
+            📄 Your Job Applications
+          </h1>
+          <button
+            onClick={handleBack}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded shadow font-semibold transition"
+            title="Back to Dashboard"
+          >
+            ← Back
+          </button>
+        </div>
 
         {loading ? (
-          <p className="text-lg text-white text-center">Loading applications...</p>
+          <p className="text-lg text-orange-800 text-center">Loading applications...</p>
         ) : applications.length === 0 ? (
-          <p className="text-white text-center">
-            You haven’t applied for any jobs yet.
-          </p>
+          <p className="text-orange-700 text-center">You haven’t applied for any jobs yet.</p>
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {applications.map((job) => (
               <div
                 key={job._id}
-                className="bg-white bg-opacity-95 border-l-4 border-yellow-500 rounded-lg shadow p-6"
+                className="bg-white border-l-4 border-yellow-500 rounded-xl shadow-md p-6"
               >
                 <h2 className="text-xl font-semibold text-orange-700 mb-2">
                   {job.title}
                 </h2>
-                <p className="text-amber-900 mb-1">
+                <p className="text-gray-800 mb-1">
                   <strong>Location:</strong> {job.location}
                 </p>
-                <p className="text-amber-900 mb-1">
+                <p className="text-gray-800 mb-1">
                   <strong>Company:</strong> {job.postedBy || "Not specified"}
                 </p>
                 <p className="text-sm mt-2">
@@ -91,6 +91,6 @@ export default function JobApplications() {
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

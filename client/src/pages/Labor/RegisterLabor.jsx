@@ -1,6 +1,6 @@
-// pages/Labor/RegisterLabor.jsx
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterLabor() {
   const [formData, setFormData] = useState({
@@ -13,6 +13,7 @@ export default function RegisterLabor() {
   });
 
   const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
   const validate = () => {
     const newErrors = {};
@@ -21,7 +22,8 @@ export default function RegisterLabor() {
     if (!formData.skill.trim()) newErrors.skill = "Skill is required";
     if (!formData.location.trim()) newErrors.location = "Location is required";
     if (!formData.experience.trim()) newErrors.experience = "Experience is required";
-    if (!formData.password || formData.password.length < 6) newErrors.password = "Password (min 6 chars) is required";
+    if (!formData.password || formData.password.length < 6)
+      newErrors.password = "Password (min 6 chars) is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -36,48 +38,71 @@ export default function RegisterLabor() {
     if (!validate()) return;
 
     try {
-      const res = await axios.post("http://localhost:5000/api/labor/register", formData);
+      await axios.post("http://localhost:5000/api/labor/register", formData);
       alert("Laborer registered successfully!");
-      setFormData({ name: "", phone: "", skill: "", location: "", experience: "", password: "" });
+      setFormData({
+        name: "",
+        phone: "",
+        skill: "",
+        location: "",
+        experience: "",
+        password: "",
+      });
     } catch (error) {
       console.error("Registration error:", error);
-      alert(
-        error.response?.data?.message || "Registration failed. Please try again."
-      );
+      alert(error.response?.data?.message || "Registration failed. Please try again.");
     }
   };
 
+  const handleBack = () => {
+    navigate("/labor/dashboard");
+  };
+
   return (
-    <div className="max-w-xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center text-orange-600">Register as a Laborer</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {[
-          { label: "Name", name: "name" },
-          { label: "Phone", name: "phone" },
-          { label: "Skill", name: "skill" },
-          { label: "Location", name: "location" },
-          { label: "Experience", name: "experience" },
-          { label: "Password", name: "password", type: "password" }
-        ].map(({ label, name, type = "text" }) => (
-          <div key={name}>
-            <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
-            <input
-              type={type}
-              name={name}
-              value={formData[name]}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
-            />
-            {errors[name] && <p className="text-red-500 text-sm mt-1">{errors[name]}</p>}
-          </div>
-        ))}
-        <button
-          type="submit"
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded"
-        >
-          Register
-        </button>
-      </form>
+    <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-orange-100 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-xl bg-white border-l-4 border-orange-500 p-8 rounded-xl shadow-lg">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-orange-700">📝 Register as a Laborer</h2>
+          <button
+            onClick={handleBack}
+            className="text-sm bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded shadow font-medium transition"
+          >
+            ← Back
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {[
+            { label: "Name", name: "name" },
+            { label: "Phone", name: "phone" },
+            { label: "Skill", name: "skill" },
+            { label: "Location", name: "location" },
+            { label: "Experience", name: "experience" },
+            { label: "Password", name: "password", type: "password" },
+          ].map(({ label, name, type = "text" }) => (
+            <div key={name}>
+              <label htmlFor={name} className="block text-sm font-semibold text-gray-700">
+                {label}
+              </label>
+              <input
+                type={type}
+                name={name}
+                value={formData[name]}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded px-4 py-2 focus:ring-orange-500 focus:border-orange-500"
+              />
+              {errors[name] && (
+                <p className="text-red-500 text-sm mt-1">{errors[name]}</p>
+              )}
+            </div>
+          ))}
+          <button
+            type="submit"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded transition"
+          >
+            Register
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

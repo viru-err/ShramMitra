@@ -42,6 +42,7 @@ export const registerLabor = async (req, res) => {
 };
 
 // ✅ Labor applies for a job
+// ✅ Labor applies for a job
 export const applyForJob = async (req, res) => {
   try {
     const laborId = req.user.id;
@@ -56,22 +57,26 @@ export const applyForJob = async (req, res) => {
       return res.status(404).json({ message: "Job not found" });
     }
 
+    // Prevent duplicate applications
     if (job.applicants && job.applicants.includes(laborId)) {
       return res.status(400).json({ message: "Already applied for this job" });
     }
 
-    // ✅ Add labor to job's applicants
-    job.applicants = job.applicants || [];
+    // Add laborer to job's applicants list
     job.applicants.push(laborId);
     await job.save();
 
-    // ✅ Add job to labor's appliedJobs
-    const labor = await Labor.findById(laborId).select("name phone skill location experience appliedJobs");
+    // Add job to laborer's appliedJobs list
+    const labor = await Labor.findById(laborId);
+    if (!labor) {
+      return res.status(404).json({ message: "Labor not found" });
+    }
+
     labor.appliedJobs = labor.appliedJobs || [];
     labor.appliedJobs.push(job._id);
     await labor.save();
 
-    // ✅ Notify the client
+    // Find client and send notification
     const client = await Client.findOne({ phone: job.postedBy });
     if (client) {
       await Notification.create({
@@ -98,6 +103,7 @@ export const applyForJob = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // ✅ Get notifications for logged-in labor
 export const getLaborNotifications = async (req, res) => {
