@@ -43,6 +43,14 @@ const laborSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    // 👇 Add this field to track applied jobs
+    appliedJobs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+      },
+    ],
   },
   {
     timestamps: true,

@@ -13,6 +13,7 @@ router.post("/post", verifyToken, (req, res, next) => {
 });
 
 // ✅ Get all jobs (protected, used by laborers to find jobs)
+
 router.get("/", verifyToken, getAllJobs);
 
 // ✅ Catch-all for undefined job routes

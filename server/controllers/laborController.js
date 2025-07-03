@@ -60,13 +60,19 @@ export const applyForJob = async (req, res) => {
       return res.status(400).json({ message: "Already applied for this job" });
     }
 
+    // ✅ Add labor to job's applicants
     job.applicants = job.applicants || [];
     job.applicants.push(laborId);
     await job.save();
 
-    const labor = await Labor.findById(laborId).select("name phone skill location experience");
-    const client = await Client.findOne({ phone: job.postedBy });
+    // ✅ Add job to labor's appliedJobs
+    const labor = await Labor.findById(laborId).select("name phone skill location experience appliedJobs");
+    labor.appliedJobs = labor.appliedJobs || [];
+    labor.appliedJobs.push(job._id);
+    await labor.save();
 
+    // ✅ Notify the client
+    const client = await Client.findOne({ phone: job.postedBy });
     if (client) {
       await Notification.create({
         user: client._id,
@@ -147,3 +153,26 @@ export const viewLaborers = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch laborers" });
   }
 };
+// ✅ Fetch jobs applied by logged-in labor
+export const appliedJob = async (req, res) => {
+  try {
+    const laborId = req.user.id;
+
+    const labor = await Labor.findById(laborId)
+      .populate({
+        path: "appliedJobs",
+        select: "title location deadline skill",
+      })
+      .select("appliedJobs");
+
+    if (!labor) {
+      return res.status(404).json({ message: "Labor not found" });
+    }
+
+    res.status(200).json({ appliedJobs: labor.appliedJobs });
+  } catch (error) {
+    console.error("Applied Job Fetch Error:", error);
+    res.status(500).json({ message: "Failed to fetch applied jobs" });
+  }
+};
+

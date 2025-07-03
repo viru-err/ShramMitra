@@ -12,10 +12,10 @@ export const postJob = async (req, res) => {
       location,
       description = "",
       numberOfLaborers,
-      date, // deadline
+      date, // expected as deadline
     } = req.body;
 
-    // Validate required fields
+    // 🔍 Validate required fields
     if (
       !title?.trim() ||
       !skill?.trim() ||
@@ -31,15 +31,15 @@ export const postJob = async (req, res) => {
       });
     }
 
-    // Check date validity
     const deadline = new Date(date);
     if (isNaN(deadline.getTime())) {
       return res.status(400).json({ message: "Invalid date format." });
     }
 
+    // 🔐 Authenticated client phone from token
     const phone = req.user?.phone;
     if (!phone) {
-      return res.status(401).json({ message: "Unauthorized. No client phone found." });
+      return res.status(401).json({ message: "Unauthorized. Client phone missing." });
     }
 
     const client = await Client.findOne({ phone }).select("_id");
@@ -47,6 +47,7 @@ export const postJob = async (req, res) => {
       return res.status(404).json({ message: "Client not found" });
     }
 
+    // 💼 Create and save new job
     const job = new Job({
       title: title.trim(),
       skill: skill.trim(),
@@ -59,7 +60,7 @@ export const postJob = async (req, res) => {
 
     await job.save();
 
-    // Notify matching laborers
+    // 🔔 Notify matching laborers
     const matchedLabors = await Labor.find({
       skill: { $regex: new RegExp(skill, "i") },
       location: { $regex: new RegExp(location, "i") },
@@ -74,17 +75,18 @@ export const postJob = async (req, res) => {
         meta: { jobId: job._id },
         userModel: "Labor",
       }));
+
       await Notification.insertMany(notifications);
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Job posted successfully.",
       jobId: job._id,
       notifiedLabors: matchedLabors.length,
     });
   } catch (error) {
     console.error("Job Post Error:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
+    return res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 

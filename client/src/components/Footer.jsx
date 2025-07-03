@@ -1,11 +1,11 @@
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-r from-amber-700 via-orange-600 to-yellow-600 text-white px-6 py-4 w-full shadow-[0_0_24px_0_rgba(0,0,0,0.25)]">
+    <footer className="bg-gradient-to-r from-amber-700 via-orange-600 to-yellow-600 text-white px-6 py-4 w-full shadow-[0_0_24px_0_rgba(0,0,0,0.25)] z-10">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between text-center gap-2">
         <p className="text-sm tracking-wide">
           &copy; {new Date().getFullYear()} <span className="font-semibold">ShramMitra</span>
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ">
           <a
             href="mailto:support@shrammitra.in"
             className="underline hover:text-yellow-200 transition-colors"

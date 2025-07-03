@@ -5,6 +5,7 @@ import {
   applyForJob,
   getLaborNotifications,
   viewLaborers,
+  appliedJob, // ✅ make sure this function exists in laborController.js
 } from "../controllers/laborController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
@@ -32,7 +33,7 @@ router.get("/view-laborers", verifyToken, (req, res, next) => {
   viewLaborers(req, res, next);
 });
 
-// ✅ Protected: Labor dashboard (Labor only)
+// ✅ Protected: Labor dashboard
 router.get("/dashboard", verifyToken, (req, res) => {
   if (req.user.role !== "labor") {
     return res.status(403).json({ message: "Access denied. Labor only." });
@@ -51,6 +52,14 @@ router.get("/notifications", verifyToken, (req, res, next) => {
     return res.status(403).json({ message: "Access denied. Labor only." });
   }
   getLaborNotifications(req, res, next);
+});
+
+// ✅ Protected: Get all applied jobs by logged-in labor
+router.get("/application", verifyToken, (req, res, next) => {
+  if (req.user.role !== "labor") {
+    return res.status(403).json({ message: "Access denied. Labor only." });
+  }
+  appliedJob(req, res, next);
 });
 
 // ❌ Fallback for undefined labor routes
